@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Informe de Inspección – {{ project.name }}</title>
+  <style>
+    /* ── Reset y tipografía ──────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+      font-size: 11pt;
+      color: #222;
+      line-height: 1.5;
+      padding: 2cm 2.5cm;
+    }
+
+    /* ── Encabezado ─────────────────────────────────────────────────────── */
+    header {
+      border-bottom: 3px solid #1a5276;
+      padding-bottom: 0.6cm;
+      margin-bottom: 0.8cm;
+    }
+    header h1 { font-size: 18pt; color: #1a5276; }
+    header h2 { font-size: 12pt; color: #555; font-weight: normal; }
+    header .meta { font-size: 9pt; color: #777; margin-top: 0.2cm; }
+
+    /* ── Secciones ──────────────────────────────────────────────────────── */
+    section { margin-bottom: 1cm; }
+    section h3 {
+      font-size: 13pt;
+      color: #1a5276;
+      border-left: 4px solid #1a5276;
+      padding-left: 0.3cm;
+      margin-bottom: 0.4cm;
+    }
+
+    /* ── Tablas ─────────────────────────────────────────────────────────── */
+    table { width: 100%; border-collapse: collapse; font-size: 9.5pt; }
+    thead { background-color: #1a5276; color: #fff; }
+    thead th { padding: 0.25cm 0.3cm; text-align: left; }
+    tbody tr:nth-child(even) { background-color: #eaf2f8; }
+    tbody td { padding: 0.2cm 0.3cm; border-bottom: 1px solid #ccc; }
+
+    /* ── Indicadores clave ───────────────────────────────────────────────── */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.5cm;
+    }
+    .kpi-card {
+      background: #eaf2f8;
+      border: 1px solid #aed6f1;
+      border-radius: 4px;
+      padding: 0.4cm;
+      text-align: center;
+    }
+    .kpi-card .value { font-size: 16pt; font-weight: bold; color: #1a5276; }
+    .kpi-card .label { font-size: 8.5pt; color: #555; }
+
+    /* ── Pie de página ──────────────────────────────────────────────────── */
+    footer {
+      margin-top: 1cm;
+      border-top: 1px solid #ccc;
+      padding-top: 0.3cm;
+      font-size: 8.5pt;
+      color: #888;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Informe de Inspección Estructural</h1>
+  <h2>Proyecto: {{ project.name }}</h2>
+  <p class="meta">
+    Inspección #{{ inspection.id }} &nbsp;|&nbsp;
+    Estado: <strong>{{ inspection.status }}</strong> &nbsp;|&nbsp;
+    Generado: {{ generated_at }}
+  </p>
+</header>
+
+<!-- ── 1. Resumen ─────────────────────────────────────────────────────────── -->
+<section>
+  <h3>1. Resumen del Proyecto</h3>
+  <table>
+    <tbody>
+      <tr><td><strong>Nombre</strong></td><td>{{ project.name }}</td></tr>
+      <tr><td><strong>Descripción</strong></td><td>{{ project.description or "—" }}</td></tr>
+      <tr><td><strong>Video fuente</strong></td><td>{{ inspection.video_path or "—" }}</td></tr>
+      <tr><td><strong>Fecha creación</strong></td><td>{{ inspection.created_at }}</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ── 2. Indicadores clave ───────────────────────────────────────────────── -->
+<section>
+  <h3>2. Indicadores Clave</h3>
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div class="value">{{ total_detections }}</div>
+      <div class="label">Detecciones totales</div>
+    </div>
+    <div class="kpi-card">
+      <div class="value">{{ unique_classes }}</div>
+      <div class="label">Clases detectadas</div>
+    </div>
+    <div class="kpi-card">
+      <div class="value">{{ avg_confidence | round(2) }}</div>
+      <div class="label">Confianza promedio</div>
+    </div>
+  </div>
+</section>
+
+<!-- ── 3. Detecciones YOLO ────────────────────────────────────────────────── -->
+<section>
+  <h3>3. Detecciones YOLO</h3>
+  {% if detections %}
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Frame</th>
+        <th>Clase</th>
+        <th>Confianza</th>
+        <th>BBox (x1, y1, x2, y2)</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for d in detections %}
+      <tr>
+        <td>{{ loop.index }}</td>
+        <td>{{ d.frame_file }}</td>
+        <td>{{ d.class_name }}</td>
+        <td>{{ "%.2f"|format(d.confidence) }}</td>
+        <td>
+          {% if d.bbox_x1 is not none %}
+            ({{ d.bbox_x1|round(1) }}, {{ d.bbox_y1|round(1) }},
+             {{ d.bbox_x2|round(1) }}, {{ d.bbox_y2|round(1) }})
+          {% else %}—{% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p>Sin detecciones registradas para esta inspección.</p>
+  {% endif %}
+</section>
+
+<!-- ── 4. Métricas estructurales ──────────────────────────────────────────── -->
+<section>
+  <h3>4. Métricas Estructurales</h3>
+  {% if metrics %}
+  <table>
+    <thead>
+      <tr><th>Métrica</th><th>Valor</th><th>Unidad</th></tr>
+    </thead>
+    <tbody>
+      {% for m in metrics %}
+      <tr>
+        <td>{{ m.metric_name }}</td>
+        <td>{{ "%.4f"|format(m.metric_value) }}</td>
+        <td>{{ m.unit or "—" }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p>Sin métricas estructurales registradas para esta inspección.</p>
+  {% endif %}
+</section>
+
+<footer>
+  Sistema Edge de Predimensionamiento Estructural y Análisis de Vulnerabilidad (SE-PEAV) &nbsp;|&nbsp;
+  Tesis II – {{ generated_at[:4] }}
+</footer>
+
+</body>
+</html>
