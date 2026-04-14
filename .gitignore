@@ -1,0 +1,77 @@
+# ─── Workspace (datos locales pesados) ──────────────────────────────────────
+workspace/
+
+# ─── Archivos de video y multimedia ─────────────────────────────────────────
+*.mp4
+*.avi
+*.mov
+*.mkv
+*.wmv
+*.flv
+*.webm
+*.m4v
+
+# ─── Archivos de nube de puntos y mallas 3D ──────────────────────────────────
+*.ply
+*.pcd
+*.obj
+*.stl
+*.glb
+*.gltf
+*.las
+*.laz
+
+# ─── Bases de datos locales ──────────────────────────────────────────────────
+*.db
+*.sqlite
+*.sqlite3
+
+# ─── Modelos de IA y pesos ───────────────────────────────────────────────────
+*.pt
+*.pth
+*.onnx
+*.bin
+*.safetensors
+03_ai_analysis/models/weights/
+
+# ─── Artefactos de compilación C++/CUDA ─────────────────────────────────────
+02_geometry_engine/build/
+02_geometry_engine/CMakeCache.txt
+02_geometry_engine/CMakeFiles/
+*.o
+*.a
+*.so
+*.dll
+*.dylib
+
+# ─── Python ──────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+env/
+.env
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.mypy_cache/
+
+# ─── Reportes generados ──────────────────────────────────────────────────────
+04_reporting_etl/output/
+
+# ─── Logs ────────────────────────────────────────────────────────────────────
+*.log
+logs/
+
+# ─── Imágenes de frames extraídos ────────────────────────────────────────────
+01_ingest_layer/output/
+
+# ─── IDEs y sistema operativo ────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo

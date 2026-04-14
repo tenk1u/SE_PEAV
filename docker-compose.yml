@@ -1,0 +1,124 @@
+version: "3.9"
+
+# ─── Volúmenes compartidos ────────────────────────────────────────────────────
+# IMPORTANTE: los bind mounts requieren que las carpetas existan ANTES de
+# ejecutar cualquier servicio. Créalas con:
+#   mkdir -p workspace/raw_data workspace/processed_data
+volumes:
+  workspace_raw:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./workspace/raw_data
+  workspace_processed:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./workspace/processed_data
+
+# ─── Red interna ──────────────────────────────────────────────────────────────
+networks:
+  se_peav_net:
+    driver: bridge
+
+# ─── Servicios ────────────────────────────────────────────────────────────────
+services:
+
+  # ── 01 Ingest Layer ──────────────────────────────────────────────────────────
+  ingest:
+    build:
+      context: ./01_ingest_layer
+      dockerfile: Dockerfile
+    image: se_peav/ingest:latest
+    container_name: se_peav_ingest
+    volumes:
+      - workspace_raw:/data/raw_data
+      - workspace_processed:/data/processed_data
+    environment:
+      - PYTHONUNBUFFERED=1
+    networks:
+      - se_peav_net
+    # El contenedor espera a que le pasen el vídeo y los argumentos vía entrypoint.
+    # Ejemplo: docker compose run ingest --input /data/raw_data/video.mp4 \
+    #                                    --output /data/processed_data/frames/ --fps 0.5
+    entrypoint: ["python", "extract_frames.py"]
+    profiles:
+      - ingest
+
+  # ── 02 Geometry Engine ───────────────────────────────────────────────────────
+  geometry_engine:
+    build:
+      context: ./02_geometry_engine
+      dockerfile: Dockerfile
+    image: se_peav/geometry_engine:latest
+    container_name: se_peav_geometry
+    volumes:
+      - workspace_processed:/data/processed_data
+    environment:
+      - PYTHONUNBUFFERED=1
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    networks:
+      - se_peav_net
+    # Ejemplo: docker compose run geometry_engine \
+    #   --images /data/processed_data/frames/ \
+    #   --workspace /data/processed_data/colmap_output/
+    entrypoint: ["python", "colmap_runner.py"]
+    profiles:
+      - geometry
+
+  # ── 03 AI Analysis ───────────────────────────────────────────────────────────
+  ai_analysis:
+    build:
+      context: ./03_ai_analysis
+      dockerfile: Dockerfile
+    image: se_peav/ai_analysis:latest
+    container_name: se_peav_ai
+    volumes:
+      - workspace_processed:/data/processed_data
+    environment:
+      - PYTHONUNBUFFERED=1
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    networks:
+      - se_peav_net
+    # Ejemplo: docker compose run ai_analysis \
+    #   --images /data/processed_data/frames/ \
+    #   --weights /app/models/weights/yolo_construction.pt \
+    #   --db /data/processed_data/analysis.db
+    entrypoint: ["python", "detect_elements.py"]
+    profiles:
+      - ai
+
+  # ── 04 Reporting ETL ─────────────────────────────────────────────────────────
+  reporting_etl:
+    build:
+      context: ./04_reporting_etl
+      dockerfile: Dockerfile
+    image: se_peav/reporting:latest
+    container_name: se_peav_reporting
+    volumes:
+      - workspace_processed:/data/processed_data
+    environment:
+      - PYTHONUNBUFFERED=1
+    networks:
+      - se_peav_net
+    # Ejemplo: docker compose run reporting_etl \
+    #   --db /data/processed_data/analysis.db \
+    #   --inspection_id 1 \
+    #   --output /data/processed_data/reports/informe_1.pdf
+    entrypoint: ["python", "generate_report.py"]
+    profiles:
+      - reporting
