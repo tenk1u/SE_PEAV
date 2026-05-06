@@ -68,6 +68,35 @@ logs/
 # ─── Imágenes de frames extraídos ────────────────────────────────────────────
 01_ingest_layer/output/
 
+# ─── Backend ──────────────────────────────────────────────────────────────────
+backend/.env
+backend/venv/
+backend/__pycache__/
+backend/app/__pycache__/
+backend/app/**/__pycache__/
+backend/.pytest_cache/
+backend/.mypy_cache/
+backend/htmlcov/
+backend/.coverage
+
+# ─── Mobile (Flutter) ────────────────────────────────────────────────────────
+mobile/.dart_tool/
+mobile/.packages
+mobile/build/
+mobile/.flutter-plugins
+mobile/.flutter-plugins-dependencies
+mobile/pubspec.lock
+
+# ─── Frontend (Node.js) ──────────────────────────────────────────────────────
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/build/
+frontend/.env.local
+
+# ─── Docker ───────────────────────────────────────────────────────────────────
+.docker/
+
 # ─── IDEs y sistema operativo ────────────────────────────────────────────────
 .DS_Store
 Thumbs.db

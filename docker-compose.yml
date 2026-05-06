@@ -1,9 +1,6 @@
 version: "3.9"
 
 # ─── Volúmenes compartidos ────────────────────────────────────────────────────
-# IMPORTANTE: los bind mounts requieren que las carpetas existan ANTES de
-# ejecutar cualquier servicio. Créalas con:
-#   mkdir -p workspace/raw_data workspace/processed_data
 volumes:
   workspace_raw:
     driver: local
@@ -17,6 +14,12 @@ volumes:
       type: none
       o: bind
       device: ./workspace/processed_data
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  minio_data:
+    driver: local
 
 # ─── Red interna ──────────────────────────────────────────────────────────────
 networks:
@@ -26,7 +29,112 @@ networks:
 # ─── Servicios ────────────────────────────────────────────────────────────────
 services:
 
-  # ── 01 Ingest Layer ──────────────────────────────────────────────────────────
+  # ── Infraestructura ─────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:15-alpine
+    container_name: se_peav_postgres
+    environment:
+      POSTGRES_USER: se_peav
+      POSTGRES_PASSWORD: se_peav_password
+      POSTGRES_DB: se_peav
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - se_peav_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U se_peav"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: se_peav_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - se_peav_net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  minio:
+    image: minio/minio:latest
+    container_name: se_peav_minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    networks:
+      - se_peav_net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+  # ── Backend API ─────────────────────────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: se_peav/backend:latest
+    container_name: se_peav_backend
+    ports:
+      - "8000:8000"
+    environment:
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - REDIS_HOST=redis
+      - S3_ENDPOINT=minio:9000
+      - DEBUG=true
+      - SECRET_KEY=your-secret-key-change-in-production-use-openssl-rand-hex-32
+    volumes:
+      - ./backend:/app
+    networks:
+      - se_peav_net
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  # ── Celery Worker ───────────────────────────────────────────────────────────
+  celery_worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: se_peav/backend:latest
+    container_name: se_peav_celery_worker
+    environment:
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - REDIS_HOST=redis
+      - S3_ENDPOINT=minio:9000
+    volumes:
+      - ./backend:/app
+    networks:
+      - se_peav_net
+    depends_on:
+      - backend
+      - redis
+    command: celery -A app.services.processing worker --loglevel=info --concurrency=2
+
+  # ── 01 Ingest Layer (Pipeline original) ─────────────────────────────────────
   ingest:
     build:
       context: ./01_ingest_layer
@@ -40,14 +148,11 @@ services:
       - PYTHONUNBUFFERED=1
     networks:
       - se_peav_net
-    # El contenedor espera a que le pasen el vídeo y los argumentos vía entrypoint.
-    # Ejemplo: docker compose run ingest --input /data/raw_data/video.mp4 \
-    #                                    --output /data/processed_data/frames/ --fps 0.5
     entrypoint: ["python", "extract_frames.py"]
     profiles:
-      - ingest
+      - pipeline
 
-  # ── 02 Geometry Engine ───────────────────────────────────────────────────────
+  # ── 02 Geometry Engine ──────────────────────────────────────────────────────
   geometry_engine:
     build:
       context: ./02_geometry_engine
@@ -67,14 +172,11 @@ services:
               capabilities: [gpu]
     networks:
       - se_peav_net
-    # Ejemplo: docker compose run geometry_engine \
-    #   --images /data/processed_data/frames/ \
-    #   --workspace /data/processed_data/colmap_output/
     entrypoint: ["python", "colmap_runner.py"]
     profiles:
-      - geometry
+      - pipeline
 
-  # ── 03 AI Analysis ───────────────────────────────────────────────────────────
+  # ── 03 AI Analysis ──────────────────────────────────────────────────────────
   ai_analysis:
     build:
       context: ./03_ai_analysis
@@ -94,15 +196,11 @@ services:
               capabilities: [gpu]
     networks:
       - se_peav_net
-    # Ejemplo: docker compose run ai_analysis \
-    #   --images /data/processed_data/frames/ \
-    #   --weights /app/models/weights/yolo_construction.pt \
-    #   --db /data/processed_data/analysis.db
     entrypoint: ["python", "detect_elements.py"]
     profiles:
-      - ai
+      - pipeline
 
-  # ── 04 Reporting ETL ─────────────────────────────────────────────────────────
+  # ── 04 Reporting ETL ────────────────────────────────────────────────────────
   reporting_etl:
     build:
       context: ./04_reporting_etl
@@ -115,10 +213,6 @@ services:
       - PYTHONUNBUFFERED=1
     networks:
       - se_peav_net
-    # Ejemplo: docker compose run reporting_etl \
-    #   --db /data/processed_data/analysis.db \
-    #   --inspection_id 1 \
-    #   --output /data/processed_data/reports/informe_1.pdf
     entrypoint: ["python", "generate_report.py"]
     profiles:
-      - reporting
+      - pipeline
