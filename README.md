@@ -25,45 +25,45 @@ En Perú, muchas viviendas escalonadas son autoconstruidas por maestros de obras
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                           CAPA DE CAPTURA                                    │
-│  ┌─────────────────┐    ┌─────────────────────────────────────────────────┐  │
-│  │  DJI M4E        │    │  Flutter App (iOS/Android)                     │  │
-│  │  - Video 4K     │    │  - LiDAR Scanner (iPhone Pro 15+)             │  │
-│  │  - GPS/RTK      │    │  - ARKit/ARCore para tracking                 │  │
-│  └────────┬────────┘    │  - Guía de captura visual                     │  │
-│           │             └──────────────────────────┬──────────────────────┘  │
+│                           CAPA DE CAPTURA                                   │
+│  ┌─────────────────┐    ┌─────────────────────────────────────────────────┐ │
+│  │  DJI M4E        │    │  Flutter App (iOS/Android)                      │ │
+│  │  - Video 4K     │    │  - LiDAR Scanner (iPhone Pro 15+)               │ │
+│  │  - GPS/RTK      │    │  - ARKit/ARCore para tracking                   │ │
+│  └────────┬────────┘    │  - Guía de captura visual                       │ │
+│           │             └──────────────────────────┬──────────────────────┘ │
 └───────────┼──────────────────────────────────────┼──────────────────────────┘
             │                                      │
             ▼                                      ▼
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                    API GATEWAY + STORAGE                                     │
+│                    API GATEWAY + STORAGE                                    │
 │  ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐          │
-│  │  FastAPI         │    │  PostgreSQL     │    │  MinIO/S3       │          │
-│  │  - Auth          │    │  - Metadata     │    │  - Videos       │          │
-│  │  - Upload        │    │  - Users        │    │  - Point Clouds │          │
+│  │  FastAPI        │    │  PostgreSQL     │    │  MinIO/S3       │          │
+│  │  - Auth         │    │  - Metadata     │    │  - Videos       │          │
+│  │  - Upload       │    │  - Users        │    │  - Point Clouds │          │
 │  └────────┬────────┘    └─────────────────┘    └─────────────────┘          │
 └───────────┼─────────────────────────────────────────────────────────────────┘
             │
             ▼
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                    PIPELINE DE PROCESAMIENTO (Celery Workers)                │
+│                    PIPELINE DE PROCESAMIENTO (Celery Workers)               │
 │  ┌────────────────────────────────────────────────────────────────────────┐ │
-│  │  1. Frame Extraction (OpenCV)                                         │ │
-│  │  2. LiDAR + Photogrammetry Fusion                                     │ │
-│  │  3. COLMAP SfM (Structure from Motion)                                │ │
-│  │  4. 3DGS Training (3D Gaussian Splatting)                             │ │
-│  │  5. YOLO Detection (Elementos estructurales)                          │ │
-│  │  6. Structural Analysis (FEM + Heurísticas E.060)                     │ │
+│  │  1. Frame Extraction (OpenCV)                                          │ │
+│  │  2. LiDAR + Photogrammetry Fusion                                      │ │
+│  │  3. COLMAP SfM (Structure from Motion)                                 │ │
+│  │  4. 3DGS Training (3D Gaussian Splatting)                              │ │
+│  │  5. YOLO Detection (Elementos estructurales)                           │ │
+│  │  6. Structural Analysis (FEM + Heurísticas E.060)                      │ │
 │  └────────────────────────────────────────────────────────────────────────┘ │
 └─────────────────────────────────────────────────────────────────────────────┘
             │
             ▼
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                    CAPA DE PRESENTACIÓN                                      │
+│                    CAPA DE PRESENTACIÓN                                     │
 │  ┌─────────────────┐    ┌─────────────────────────────────────────────────┐ │
-│  │  Three.js       │    │  Report Generator                             │ │
-│  │  - 3DGS Viewer  │    │  - PDF con vulnerabilidades                   │ │
-│  │  - Hotspots     │    │  - Recomendaciones                            │ │
+│  │  Three.js       │    │  Report Generator                               │ │
+│  │  - 3DGS Viewer  │    │  - PDF con vulnerabilidades                     │ │
+│  │  - Hotspots     │    │  - Recomendaciones                              │ │
 │  └─────────────────┘    └─────────────────────────────────────────────────┘ │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
