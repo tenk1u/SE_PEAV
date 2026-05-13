@@ -273,7 +273,7 @@ Ver `.gitignore`. Resumen:
 | Análisis E.060 | ✅ Completado | 100% |
 | Pipeline de Procesamiento | ✅ Completado | 100% |
 | Tests Unitarios | ✅ Completado | 100% |
-| App Flutter | ⏳ Pendiente | 0% |
+| App Flutter | 🔧 En progreso | 60% |
 | Visor Three.js | ⏳ Pendiente | 0% |
 | Deploy Producción | ⏳ Pendiente | 0% |
 
@@ -338,17 +338,22 @@ Ver `.gitignore`. Resumen:
 | Backend | se_peav/backend | 8000 | ✅ Running |
 | Celery Worker | se_peav/backend | - | ✅ Running |
 
-#### ⏳ App Flutter (Pendiente)
+#### 🔧 App Flutter (En Progreso - 60%)
 
-| Módulo | Estado | Descripción |
-|--------|--------|-------------|
-| Setup proyecto | ⏳ | Configuración inicial Flutter |
-| UI principal | ⏳ | Pantallas de navegación |
-| Captura de video | ⏳ | Grabación con cámara |
-| LiDAR Scanner | ⏳ | Escaneo 3D con iPhone Pro |
-| AR Tracking | ⏳ | ARKit/ARCore para posicionamiento |
-| Upload a servidor | ⏳ | Envío de datos al backend |
-| Visualización básica | ⏳ | Previsualización de capturas |
+| Módulo | Estado | Archivo | Descripción |
+|--------|--------|---------|-------------|
+| Setup proyecto | ✅ | `mobile/` | Configuración Flutter con dependencias |
+| Theme y estilos | ✅ | `mobile/lib/app/theme/app_theme.dart` | Tema Material Design 3 |
+| API Client | ✅ | `mobile/lib/core/api/api_client.dart` | Comunicación con backend |
+| Router/Nav | ✅ | `mobile/lib/app/routes/app_router.dart` | Go Router con bottom nav |
+| Login/Register | ✅ | `mobile/lib/features/auth/` | Autenticación completa |
+| Proyectos CRUD | ✅ | `mobile/lib/features/projects/` | Lista y detalle de proyectos |
+| Inspecciones | ✅ | `mobile/lib/features/inspections/` | Lista, detalle y estado |
+| Captura video/fotos | ✅ | `mobile/lib/features/capture/` | Cámara con grabación |
+| Reportes | ✅ | `mobile/lib/features/reports/` | Lista y visualización |
+| Upload archivos | ✅ | `mobile/lib/core/api/api_client.dart` | Upload a backend |
+| LiDAR Scanner | ⏳ | - | Escaneo 3D con iPhone Pro |
+| AR Tracking | ⏳ | - | ARKit/ARCore para posicionamiento |
 
 #### ⏳ Visor Three.js (Pendiente)
 
